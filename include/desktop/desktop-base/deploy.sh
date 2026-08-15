@@ -9,11 +9,33 @@ do_configure()
     local xsession="$(user_home ${USER_NAME})/.xsession"
     local xinitrc_chroot="${CHROOT_DIR}${xinitrc}"
     local xsession_chroot="${CHROOT_DIR}${xsession}"
+    # Workaround for Android kernels without a working close_range syscall:
+    # preload a shim so GLib/dbus can spawn child processes.
+    if [ -e "${ENV_DIR}/bin/close_range.so" ]; then
+        [ -e "${CHROOT_DIR}/usr/local/lib" ] || mkdir -p "${CHROOT_DIR}/usr/local/lib"
+        cp "${ENV_DIR}/bin/close_range.so" "${CHROOT_DIR}/usr/local/lib/close_range.so"
+        chmod 644 "${CHROOT_DIR}/usr/local/lib/close_range.so"
+    fi
+    # Disable the glycin image loader sandbox: bwrap cannot create namespaces
+    # inside a container, which breaks icon loading in GTK applications.
+    # Replace it with a stub that fails with a recognized error, so glycin
+    # falls back to running loaders without a sandbox.
+    if [ -e "${CHROOT_DIR}/usr/bin/bwrap" ] && [ ! -e "${CHROOT_DIR}/usr/bin/bwrap.real" ]; then
+        mv "${CHROOT_DIR}/usr/bin/bwrap" "${CHROOT_DIR}/usr/bin/bwrap.real"
+        cat > "${CHROOT_DIR}/usr/bin/bwrap" << 'EOF'
+#!/bin/sh
+# stub: force glycin to run image loaders without a sandbox
+echo "bwrap: setting up uid map: Permission denied" >&2
+exit 1
+EOF
+        chmod 755 "${CHROOT_DIR}/usr/bin/bwrap"
+    fi
     rm -f "${xinitrc_chroot}"
     echo 'XAUTHORITY=$HOME/.Xauthority' > "${xinitrc_chroot}"
     echo 'export XAUTHORITY' >> "${xinitrc_chroot}"
     echo "LANG=$LOCALE" >> "${xinitrc_chroot}"
     echo 'export LANG' >> "${xinitrc_chroot}"
+    echo '[ -e /usr/local/lib/close_range.so ] && export LD_PRELOAD=/usr/local/lib/close_range.so' >> "${xinitrc_chroot}"
     echo 'echo $$ > /tmp/xsession.pid' >> "${xinitrc_chroot}"
     echo '. $HOME/.xsession' >> "${xinitrc_chroot}"
     chmod 755 "${xinitrc_chroot}"
