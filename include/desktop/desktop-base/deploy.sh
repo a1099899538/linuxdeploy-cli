@@ -40,6 +40,18 @@ EOF
     echo 'export XAUTHORITY' >> "${xinitrc_chroot}"
     echo "LANG=$LOCALE" >> "${xinitrc_chroot}"
     echo 'export LANG' >> "${xinitrc_chroot}"
+    # XDG_RUNTIME_DIR is required by gvfs (trash support, file management)
+    local user_uid=$(grep "^${USER_NAME}:" "${CHROOT_DIR}/etc/passwd" | awk -F: '{print $3}')
+    if [ -n "${user_uid}" ]; then
+        local run_user="${CHROOT_DIR}/run/user/${user_uid}"
+        if [ ! -e "${run_user}" ]; then
+            [ -e "${run_user%/*}" ] || mkdir -p "${run_user%/*}"
+            mkdir "${run_user}"
+            chown ${user_uid}:${user_uid} "${run_user}"
+            chmod 700 "${run_user}"
+        fi
+    fi
+    echo 'export XDG_RUNTIME_DIR=/run/user/$(id -u)' >> "${xinitrc_chroot}"
     echo 'echo $$ > /tmp/xsession.pid' >> "${xinitrc_chroot}"
     echo '. $HOME/.xsession' >> "${xinitrc_chroot}"
     chmod 755 "${xinitrc_chroot}"
