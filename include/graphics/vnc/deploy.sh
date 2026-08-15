@@ -15,7 +15,15 @@ do_install()
     local packages=""
     case "${DISTRIB}:${ARCH}:${SUITE}" in
     debian:*|ubuntu:*|kali:*)
-        packages="tightvncserver"
+        case "${SUITE}" in
+        noble|resolute)
+            # tightvncserver is unmaintained since 2009, use TigerVNC on new releases
+            packages="tigervnc-standalone-server"
+        ;;
+        *)
+            packages="tightvncserver"
+        ;;
+        esac
         apt_install ${packages}
     ;;
     archlinux:*)
@@ -39,13 +47,18 @@ do_configure()
     local vnc_home="$(user_home ${USER_NAME})/.vnc"
     local vnc_home_chroot="${CHROOT_DIR}${vnc_home}"
     [ -e "${vnc_home_chroot}" ] || mkdir "${vnc_home_chroot}"
+    # TigerVNC 1.15+ migrates ~/.vnc to ~/.config/tigervnc on first start
+    local config_home="${CHROOT_DIR}$(user_home ${USER_NAME})/.config"
+    [ -e "${config_home}" ] || mkdir "${config_home}"
     # set vnc password
     echo ${USER_PASSWORD} | chroot_exec -u root vncpasswd -f > "${vnc_home_chroot}/passwd" ||
     echo "MPTcXfgXGiY=" | base64 -d > "${vnc_home_chroot}/passwd"
     chmod 600 "${vnc_home_chroot}/passwd"
-    remove_files "${vnc_home_chroot}/xstartup"
-    ln -s ../.xinitrc "${vnc_home_chroot}/xstartup"
-    chroot_exec -u root chown -R ${USER_NAME}:${USER_NAME} "${vnc_home}"
+    # remove stale xstartup (regular file or symlink)
+    rm -f "${vnc_home_chroot}/xstartup"
+    # use absolute path, ~/.vnc may become a symlink after TigerVNC migration
+    ln -sf "$(user_home ${USER_NAME})/.xinitrc" "${vnc_home_chroot}/xstartup"
+    chroot_exec -u root chown -R ${USER_NAME}:${USER_NAME} "$(user_home ${USER_NAME})/.vnc" "$(user_home ${USER_NAME})/.config"
     return 0
 }
 

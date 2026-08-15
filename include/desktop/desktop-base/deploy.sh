@@ -9,7 +9,7 @@ do_configure()
     local xsession="$(user_home ${USER_NAME})/.xsession"
     local xinitrc_chroot="${CHROOT_DIR}${xinitrc}"
     local xsession_chroot="${CHROOT_DIR}${xsession}"
-    [ -e "${xinitrc_file}" -o -L "${xinitrc_file}" ] && rm -f "${xinitrc_chroot}"
+    rm -f "${xinitrc_chroot}"
     echo 'XAUTHORITY=$HOME/.Xauthority' > "${xinitrc_chroot}"
     echo 'export XAUTHORITY' >> "${xinitrc_chroot}"
     echo "LANG=$LOCALE" >> "${xinitrc_chroot}"
