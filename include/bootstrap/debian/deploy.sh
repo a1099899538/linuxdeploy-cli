@@ -20,12 +20,10 @@ apt_install()
 {
     local packages="$@"
     [ -n "${packages}" ] || return 1
-    (set -e
-        chroot_exec -u root apt-get update -yq
-        chroot_exec -u root "DEBIAN_FRONTEND=noninteractive apt-get install -yfq --no-install-recommends ${packages}"
-        chroot_exec -u root apt-get clean
-    exit 0)
-    return $?
+    chroot_exec -u root apt-get update -yq || return 1
+    chroot_exec -u root "DEBIAN_FRONTEND=noninteractive apt-get install -yfq --no-install-recommends ${packages}" || return 1
+    chroot_exec -u root apt-get clean || return 1
+    return 0
 }
 
 apt_repository()
