@@ -10,11 +10,16 @@ do_configure()
     local xinitrc_chroot="${CHROOT_DIR}${xinitrc}"
     local xsession_chroot="${CHROOT_DIR}${xsession}"
     # Workaround for Android kernels without a working close_range syscall:
-    # preload a shim so GLib/dbus can spawn child processes.
+    # preload a shim so GLib/dbus can spawn child processes. Using
+    # /etc/ld.so.preload covers all processes (also sudo and ssh sessions),
+    # since sudo strips the LD_PRELOAD environment variable.
     if [ -e "${ENV_DIR}/bin/close_range.so" ]; then
         [ -e "${CHROOT_DIR}/usr/local/lib" ] || mkdir -p "${CHROOT_DIR}/usr/local/lib"
         cp "${ENV_DIR}/bin/close_range.so" "${CHROOT_DIR}/usr/local/lib/close_range.so"
         chmod 644 "${CHROOT_DIR}/usr/local/lib/close_range.so"
+        if ! grep -q "close_range.so" "${CHROOT_DIR}/etc/ld.so.preload" 2>/dev/null; then
+            echo "/usr/local/lib/close_range.so" >> "${CHROOT_DIR}/etc/ld.so.preload"
+        fi
     fi
     # Disable the glycin image loader sandbox: bwrap cannot create namespaces
     # inside a container, which breaks icon loading in GTK applications.
@@ -35,7 +40,6 @@ EOF
     echo 'export XAUTHORITY' >> "${xinitrc_chroot}"
     echo "LANG=$LOCALE" >> "${xinitrc_chroot}"
     echo 'export LANG' >> "${xinitrc_chroot}"
-    echo '[ -e /usr/local/lib/close_range.so ] && export LD_PRELOAD=/usr/local/lib/close_range.so' >> "${xinitrc_chroot}"
     echo 'echo $$ > /tmp/xsession.pid' >> "${xinitrc_chroot}"
     echo '. $HOME/.xsession' >> "${xinitrc_chroot}"
     chmod 755 "${xinitrc_chroot}"

@@ -8,7 +8,7 @@ do_install()
     local packages=""
     case "${DISTRIB}:${ARCH}:${SUITE}" in
     debian:*|ubuntu:*|kali:*)
-        packages="desktop-base dbus-x11 x11-xserver-utils xfonts-base xfonts-utils xfonts-75dpi xfonts-100dpi lxde lxde-common lxde-icon-theme menu-xdg hicolor-icon-theme gtk2-engines"
+        packages="desktop-base dbus-x11 x11-xserver-utils xfonts-base xfonts-utils xfonts-75dpi xfonts-100dpi lxde lxde-common lxde-icon-theme menu-xdg hicolor-icon-theme gtk2-engines fonts-dejavu-core fonts-wqy-microhei"
         apt_install ${packages}
     ;;
     archlinux:*)
