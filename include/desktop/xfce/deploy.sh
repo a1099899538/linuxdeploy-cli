@@ -8,7 +8,7 @@ do_install()
     local packages=""
     case "${DISTRIB}:${ARCH}:${SUITE}" in
     debian:*|ubuntu:*|kali:*)
-        packages="desktop-base dbus-x11 x11-xserver-utils xfonts-base xfonts-utils xfonts-75dpi xfonts-100dpi xfce4 xfce4-terminal tango-icon-theme hicolor-icon-theme pm-utils fonts-dejavu-core fonts-wqy-microhei eog"
+        packages="desktop-base dbus-x11 x11-xserver-utils xfonts-base xfonts-utils xfonts-75dpi xfonts-100dpi xfce4 xfce4-terminal tango-icon-theme hicolor-icon-theme pm-utils fonts-dejavu-core fonts-wqy-microhei tigervnc-tools eog"
         apt_install ${packages}
     ;;
     archlinux:*)
