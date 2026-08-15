@@ -26,8 +26,11 @@ do_configure()
 {
     msg ":: Configuring ${COMPONENT} ... "
     local xsession="${CHROOT_DIR}$(user_home ${USER_NAME})/.xsession"
-    # D-Bus session bus is required for lxsession to work properly
-    echo 'exec dbus-launch --exit-with-session startlxde' > "${xsession}"
+    # lxsession cannot spawn children on some Android kernels
+    # (close_range syscall issue), so launch the desktop components directly.
+    cat > "${xsession}" << 'EOF'
+exec dbus-launch --exit-with-session sh -c 'xsetroot -solid "#3a6ea5"; lxpanel & pcmanfm --desktop & openbox'
+EOF
     # Seed default panel configuration; lxpanel fails to generate it
     # on first run with glib >= 2.80 (GFileInfo API hardening)
     local panel_conf="${CHROOT_DIR}$(user_home ${USER_NAME})/.config/lxpanel/LXDE/panels/panel"

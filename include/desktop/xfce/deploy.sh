@@ -26,6 +26,10 @@ do_configure()
 {
     msg ":: Configuring ${COMPONENT} ... "
     local xsession="${CHROOT_DIR}$(user_home ${USER_NAME})/.xsession"
-    echo 'exec dbus-launch --exit-with-session xfce4-session' > "${xsession}"
+    # xfce4-session cannot spawn children on some Android kernels
+    # (close_range syscall issue), so launch the desktop components directly.
+    cat > "${xsession}" << 'EOF'
+exec dbus-launch --exit-with-session sh -c 'xfsettingsd & xfce4-panel & xfdesktop & xfwm4'
+EOF
     return 0
 }
